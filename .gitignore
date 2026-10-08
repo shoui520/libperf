@@ -53,3 +53,10 @@ dkms.conf
 
 # CMake build folder
 build/
+
+# Private local agent workspace
+/agent/
+
+# Desktop Python tools
+__pycache__/
+*.py[cod]
