@@ -17,3 +17,6 @@ ScePerf:
         - scePerfArmPmonSoftwareIncrement: 0x4264B4E7
         - scePerfArmPmonStart: 0xC9D969D5
         - scePerfArmPmonStop: 0xD1A40F54
+
+        - scePerfGetTimebaseValue: 0xBD9615E5
+        - scePerfGetTimebaseFrequency: 0x78EA4FFB

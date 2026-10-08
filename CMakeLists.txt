@@ -11,7 +11,7 @@ endif()
 project(libperf C)
 include("${VITASDK}/share/vita.cmake" REQUIRED)
 
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wl,-q -Wall -O3 -nostdlib -fno-optimize-sibling-calls -e module_start")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wl,-q -Wall -Wextra -Werror -O3 -fno-optimize-sibling-calls")
 
 include_directories(include)
 link_directories(${CMAKE_BINARY_DIR}/kernel_stubs)
@@ -19,6 +19,8 @@ link_directories(${CMAKE_BINARY_DIR}/kernel_stubs)
 add_executable(kernel
   src/kernel.c
 )
+
+target_link_options(kernel PRIVATE -nostdlib -e module_start)
 
 target_link_libraries(kernel
   taihenForKernel_stub

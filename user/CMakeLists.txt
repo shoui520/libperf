@@ -6,9 +6,12 @@ add_executable(user
   src/user.c
 )
 
+target_link_options(user PRIVATE -nostdlib -e module_start)
+
 target_link_libraries(user
   SceKernelPerf_stub
   SceLibKernel_stub
+  SceKernelThreadMgr_stub
 )
 
 add_dependencies(user kernel_stubs)
