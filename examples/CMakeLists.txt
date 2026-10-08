@@ -13,3 +13,18 @@ vita_create_self(perf-test.self perf_test UNSAFE)
 vita_create_vpk(retail-perf-test.vpk PERF00001 perf-test.self
   VERSION 01.00 NAME "Retail CPU PMU test"
   FILE ${CMAKE_BINARY_DIR}/user/libperf.suprx libperf.suprx)
+
+add_executable(perf_demo profiler/main.c profiler/workloads.c)
+target_include_directories(perf_demo PRIVATE ../include)
+target_link_directories(perf_demo PRIVATE ${CMAKE_BINARY_DIR}/user/user_stubs)
+add_dependencies(perf_demo user_stubs)
+set_source_files_properties(profiler/workloads.c PROPERTIES
+  COMPILE_OPTIONS "-fno-tree-vectorize;-fno-tree-slp-vectorize")
+target_link_libraries(perf_demo ScePerf_stub_weak vita2d
+  SceDisplay_stub SceGxm_stub SceSysmodule_stub SceCtrl_stub ScePgf_stub
+  SceCommonDialog_stub SceAppMgr_stub SceLibKernel_stub SceIofilemgr_stub
+  SceKernelThreadMgr_stub ScePower_stub m)
+vita_create_self(perf-demo.self perf_demo UNSAFE)
+vita_create_vpk(cpu-function-profiler.vpk PERFDEMO1 perf-demo.self
+  VERSION 01.00 NAME "CPU Function Profiler"
+  FILE ${CMAKE_BINARY_DIR}/user/libperf.suprx libperf.suprx)
