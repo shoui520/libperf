@@ -59,8 +59,8 @@ make a single tiny call's duration meaningful; batching helps.
 
 A stable isolated measurement follows this order:
 
-1. Load and validate the user module, allocate input/output data, and validate
-   the workload's correctness.
+1. Load the user module and check its module ID and start status. Allocate
+   input/output data and check the workload's output correctness.
 2. Stop the target's counters and select the event bank.
 3. Warm up intentionally outside the measured interval.
 4. Reset all counter values.

@@ -1,6 +1,10 @@
 # Build, packaging, and module integration
 
-## Build prerequisites
+## Building the library from source
+
+Applications can use existing compatible libperf headers, generated stubs, and
+runtime modules. The source-build information below applies when those
+artifacts need to be built for the requested task.
 
 The project uses CMake 3.20 or newer and the VitaSDK cross toolchain. Set
 `VITASDK` to the SDK installation before configuring. The root CMake file picks
@@ -17,11 +21,6 @@ does not offer a documented library-only CMake option.
 cmake -S . -B build
 cmake --build build -j4
 ```
-
-Choose another build directory when needed, such as an ignored private agent
-workspace. Do not hardcode a maintainer's SDK path into public CMake or docs.
-Use the available job limit rather than exhausting the host with an unbounded
-parallel build.
 
 ## Target and output map
 
@@ -59,7 +58,8 @@ resolve to a loaded kernel provider before it starts successfully.
 Applications that manually load `libperf.suprx` link the generated
 `ScePerf_stub_weak`. This permits the application to start before the user
 module is loaded and resolve the profiling calls afterwards. The application
-must load and validate the module before using those calls.
+checks the module-load return value and module-start status before using
+those calls. These are runtime API results, not binary verification.
 
 The PMU test and stress application additionally use the generated
 `SceKernelPerf_stub_weak` because they call kernel open/close for lifecycle
@@ -74,8 +74,10 @@ link command if module resolution is surprising.
 ## Standalone application CMake setup
 
 The following is a minimal packaging pattern for an application with `main.c`.
-Build libperf first, then set `LIBPERF_SOURCE_DIR` and `LIBPERF_BUILD_DIR` during
-configuration. Supply the VitaSDK toolchain in your normal application setup.
+`LIBPERF_SOURCE_DIR` identifies the headers and `LIBPERF_BUILD_DIR` identifies
+an existing compatible build containing the generated stubs and user module.
+Set these paths during application configuration and supply the VitaSDK
+toolchain in your normal application setup.
 
 ```cmake
 cmake_minimum_required(VERSION 3.20)
@@ -110,20 +112,6 @@ dependencies on generated stubs as shown in
 [`examples/CMakeLists.txt`](../../examples/CMakeLists.txt). Separate builds
 cannot use each other's target dependencies and must be sequenced explicitly.
 
-## Optional SDK installation
-
-The project has CMake install rules for its public header and generated
-kernel/user `.a` stub libraries. Installation does not copy the two runtime
-modules to a Vita and does not configure taiHEN.
-
-```sh
-cmake --install build --prefix "$VITASDK/arm-vita-eabi"
-```
-
-This writes into the chosen SDK prefix and can replace same-named stub
-archives. Use a local build-directory integration when you want to avoid a
-global SDK change. Keep runtime module packaging explicit either way.
-
 ## Runtime sequence
 
 1. The supported device boots with `libperf.skprx` enabled under taiHEN's
@@ -145,18 +133,12 @@ Multiple independently managed profilers in one process can overwrite each
 other's event selection, counter values, or process access state. The library
 has no ownership arbitration. Use one coordinator and explicit synchronization.
 
-## Kernel installation and configuration
+## Runtime prerequisites
 
-The VPK's `libperf.suprx` is an application payload. The kernel plugin is a
-separate boot-time installation. The human-facing
-[setup instructions](../guide.md#install-the-kernel-plugin) show a generic
-configuration entry. Determine the active taiHEN configuration; do not edit
-every similarly named config file or create competing `*KERNEL` sections.
-
-For automated device work, follow the installed device tool's permission,
-configuration-review, transfer, verification, and reboot workflow. Preserve
-unrelated plugins. Read back the exact deployed binary and configuration when
-the workflow supports it. Keep identities and configuration snapshots private.
+The application payload contains `libperf.suprx`. A compatible
+`libperf.skprx` kernel provider must already be loaded for the user module to
+start successfully. Packaging the user module in a VPK does not load the
+kernel provider.
 
 ## Failure distinctions
 
@@ -177,7 +159,8 @@ that actually failed.
 
 ## Lifecycle tests
 
-To test disabled-state guards, the test applications declare and import:
+The bundled test applications declare and import these kernel functions for
+their disabled-state checks:
 
 ```c
 int sceKernelPerfArmPmonOpen(void);

@@ -77,9 +77,9 @@ is `02 F0 F2 EF`. The injection replaces only the two bytes at `0x1A` with
 `00 BF`, retaining the call and surrounding validation. This removes the gate
 following the `0xE4` debug-switch test in the known functions.
 
-These are partial code signatures, not a universal firmware classifier. Do
-not relax a mismatch or search blindly for a similar branch to claim support
-for another firmware. Resolve and analyze that firmware's actual semantics.
+These are partial code signatures, not a universal firmware classifier.
+The current implementation rejects a mismatch. Other firmware versions remain
+unverified.
 
 Injection IDs start at `-1`. `releaseResources()` releases injections in
 reverse order, resets their IDs, then deletes the thread-list heap and resets
@@ -121,8 +121,7 @@ pattern. `disableProcessPmon()` attempts every operation in this order:
 5. Clear native control-register state.
 
 It retains the first negative error while still attempting the remaining
-disables. Do not change rollback into a sequence that stops after its first
-failure; that would leave more process access state behind.
+disables, so one failed disable does not prevent the other cleanup attempts.
 
 There is no reference count or independent per-client lease in open/close.
 Coordinate ownership inside the application. Park active users before closing
@@ -216,16 +215,3 @@ Earlier actions remain applied when a later target vanishes. An error such as
 `0x80028021`, or an error mapped to `0x80580000` by a user wrapper, can therefore
 represent a partial broadcast. General application code must not suppress all
 invalid-argument errors as harmless churn.
-
-## Constraints for architecture changes
-
-- Keep the user-access guard ahead of direct CP15 operations.
-- Keep native saved-thread state handling and explicit process targeting.
-- Preserve byte-capacity enumeration, bounded retries, and all allocation frees.
-- Keep open/close permission restoration and failure cleanup.
-- Do not remove signature checks to broaden apparent firmware compatibility.
-- Do not add MMIO access to a TOOL-only peripheral; retail timing already has
-  a native, validated timer path.
-- A binary build or emulator pass cannot establish scheduler behavior on real
-  hardware. Validate context migration, parked snapshots, and existing/future
-  thread cases after changing these paths.

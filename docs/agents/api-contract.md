@@ -6,8 +6,8 @@ The application interface is declared in
 [`include/libperf.h`](../../include/libperf.h) and implemented in
 [`user/src/user.c`](../../user/src/user.c). Kernel-side control and process
 broadcasts are in [`src/kernel.c`](../../src/kernel.c). The user export table is
-[`user/exports.yml`](../../user/exports.yml); preserve its library and function
-NIDs when changing implementation details.
+[`user/exports.yml`](../../user/exports.yml). The ABI identifiers are listed
+below for application linkage.
 
 Nine application functions are implemented. There are no public trace-buffer,
 Razor marker, capture-trigger, activity-monitor, or overflow-interrupt APIs.
@@ -81,8 +81,6 @@ closed can succeed; it does not enable measurement.
 Native error `0x80024501` is translated to `SCE_PERF_ERROR_INVALID_ARGUMENT` by
 start, stop, reset, select, and get. The set wrapper forwards its kernel return
 without this translation. Other native errors may pass through unchanged.
-Preserve this asymmetry unless an explicitly approved compatibility change
-requires otherwise.
 
 ## Reset
 
@@ -154,12 +152,12 @@ exact source-level instruction semantics.
 | `A4` | PLE FIFO overflow | `A5` | PLE request programmed |
 
 The header imports many event constants from VitaSDK. Numeric selectors are
-useful for accepted codes that an SDK version does not name. Do not replace
-this allowlist with an unchecked arbitrary selector range.
+useful for accepted codes that an SDK version does not name. Selection accepts
+only the codes in the table.
 
-`08`, `0E`, and holes elsewhere are rejected. Do not add a conventional
-"instructions retired" selector from another processor without establishing
-its actual availability and semantics here. An accepted optional-engine event
+`08`, `0E`, and holes elsewhere are rejected. The interface does not provide
+a conventional "instructions retired" selector borrowed from another processor.
+An accepted optional-engine event
 can remain zero. Do not touch optional hardware to make a survey row nonzero.
 
 ## Start and stop
@@ -249,5 +247,5 @@ and arithmetic.
 | `scePerfGetTimebaseValue` | `0xBD9615E5` |
 | `scePerfGetTimebaseFrequency` | `0x78EA4FFB` |
 
-Change implementation behind these exports without accidentally changing
-their names, parameter widths, calling convention, or export identifiers.
+Application imports use these names, parameter widths, calling convention,
+and export identifiers.
