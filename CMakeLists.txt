@@ -37,6 +37,7 @@ vita_create_self(libperf.skprx kernel CONFIG exports.yml UNSAFE)
 vita_create_stubs(kernel_stubs kernel ${CMAKE_CURRENT_SOURCE_DIR}/exports.yml KERNEL)
 
 add_subdirectory(user)
+add_subdirectory(examples)
 
 
 install(DIRECTORY ${CMAKE_BINARY_DIR}/kernel_stubs/
