@@ -294,10 +294,17 @@ relaunching the application starts a new report. Wait until stress is idle befor
 copying its closed report for analysis.
 
 The correctness-test report is useful for diagnosis. The desktop analyzer
-accepts the function CSV and stress log formats; it does not parse the
+accepts general region CSVs, function CSVs and stress logs; it does not parse the
 correctness-test report.
 
 ## Analyze results on your desktop
+
+For your own application, write named-region measurements using the
+[general CSV format](csv-format.md). It supports arbitrary regions, event
+selectors, threads, interval totals and partial PMU coverage. Files in that
+format work directly with the analyzer. Other layouts can use explicit
+`--column` and `--event` mappings; cumulative snapshots require
+`--counter-mode cumulative`. The format is also usable by other tools.
 
 Copy the report to your desktop using your usual device file-transfer workflow.
 Run the analyzer from the repository root with Python 3.8 or newer. It needs no

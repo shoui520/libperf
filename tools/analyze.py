@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Print a terminal report or JSON for libperf function CSVs and stress logs."""
+"""Print a terminal report or JSON for region CSVs, function CSVs and stress logs."""
 
 import argparse
 import csv
@@ -336,6 +336,9 @@ def formatReport(captures, sortMetric, selectedBank):
                     for comparison in bank['comparisons']:
                         lines.append(f"  {comparison['function']} / {comparison['reference']}  "
                                      f"{comparison['cycle_cost_ratio']:.3f}× cycles")
+            elif report['kind'] == 'trace':
+                from pmu_csv import formatTrace
+                lines += formatTrace(report, sortMetric, selectedBank, safeLabel, formatNumber)
             else:
                 lines += [f"  Three-core stress · {report['status']} · "
                           f"{report['completed_epochs']:,} completed epochs", '',
@@ -375,13 +378,21 @@ def main():
                'Multiple files are kept as separate captures. Valid FAIL/CANCELLED/incomplete '
                'stress logs retain their recorded status; malformed data exits with code 2. '
                'Python 3.8+; no third-party packages required.')
-    parser.add_argument('captures', nargs='+', help='function CSVs or stress logs; - reads stdin')
+    parser.add_argument('captures', nargs='+', help='region CSVs, function CSVs or stress logs; - reads stdin')
     mode = parser.add_mutually_exclusive_group()
     mode.add_argument('--json', action='store_true', help='emit complete structured analysis (schema v1)')
     mode.add_argument('--tui', action='store_true', help='print the static terminal report (default)')
-    parser.add_argument('--bank', type=int, help='show one function event bank in the terminal report')
+    parser.add_argument('--bank', type=int, help='show one numeric CSV event bank in the terminal report')
     parser.add_argument('--sort', choices=('cycles', 'wall'), default='cycles',
                         help='rank function costs by cycles or wall time (default: cycles)')
+    parser.add_argument('--column', action='append', default=[], metavar='FIELD=HEADER',
+                        help='map a general CSV column; repeat for multiple fields')
+    parser.add_argument('--event', action='append', default=[], metavar='HEADER[=0xCODE]',
+                        help='read an arbitrary CSV column as an event counter')
+    parser.add_argument('--counter-mode', choices=('delta', 'cumulative'), default='delta',
+                        help='general CSV counter semantics; default: interval totals')
+    parser.add_argument('--counter-bits', type=int, choices=(32, 64), default=32,
+                        help='raw cumulative snapshot width (default: 32)')
     args = parser.parse_args()
     envelope = {'schema': 'libperf.analysis', 'schema_version': 1, 'status': 'ok', 'captures': []}
     try:
@@ -393,11 +404,22 @@ def main():
             if text.startswith('\ufeff'):
                 text = text[1:]
             if text.startswith('# CPU Function Profiler,'):
+                require(not args.column and not args.event and args.counter_mode == 'delta',
+                        'CSV conversion options require a general region CSV')
                 runs = [readFunction(text)]
                 require(args.bank is None or any(bank['bank'] == args.bank for bank in runs[0]['banks']),
                         f'event bank {args.bank} is not present')
-            else:
+            elif re.search(r'^START ', text, re.MULTILINE):
+                require(not args.column and not args.event and args.counter_mode == 'delta',
+                        'CSV conversion options require a general region CSV')
                 runs = readStress(text)
+            else:
+                from pmu_csv import readTrace
+                runs = [readTrace(text, args.column, args.event,
+                                  args.counter_mode, args.counter_bits)]
+                require(args.bank is None or any(row['bank'] == str(args.bank)
+                                                for row in runs[0]['regions']),
+                        f'event bank {args.bank} is not present')
             envelope['captures'].append({'source': Path(name).name if name != '-' else 'stdin', 'runs': runs})
     except (OSError, ValueError, csv.Error) as exc:
         if args.json:

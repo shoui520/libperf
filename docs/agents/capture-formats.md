@@ -2,20 +2,25 @@
 
 ## Supported producers and entry point
 
-[`tools/analyze.py`](../../tools/analyze.py) accepts function-profiler CSVs and
-three-core stress logs. It prints a static terminal report by default or emits
+[`tools/analyze.py`](../../tools/analyze.py) accepts general region CSVs,
+function-profiler CSVs and three-core stress logs. The
+[general CSV specification](../csv-format.md) defines the portable format,
+column mappings, cumulative snapshot import and the `trace` JSON run structure.
+It prints a static terminal report by default or emits
 JSON with `--json`. It is a standard-library Python 3.8+ program, not an
 interactive application or an automatic device downloader.
 
 The PMU correctness/event-survey application's text report is a different
 diagnostic format and is not accepted by this analyzer. Do not infer format
-from filename extension alone; the analyzer detects the function header and
-otherwise attempts stress parsing.
+from filename extension alone; the analyzer detects the function header,
+then line-start stress `START ` records, then attempts general CSV parsing.
 
 ## CLI contract
 
 ```text
 analyze.py captures... [--json | --tui] [--bank BANK] [--sort {cycles,wall}]
+    [--column FIELD=HEADER]... [--event HEADER[=0xCODE]]...
+    [--counter-mode {delta,cumulative}] [--counter-bits {32,64}]
 ```
 
 | Argument | Behavior |
@@ -24,9 +29,9 @@ analyze.py captures... [--json | --tui] [--bank BANK] [--sort {cycles,wall}]
 | `-` | Read one capture from stdin; allowed at most once |
 | `--tui` | Explicitly request the default printed terminal report |
 | `--json` | Emit all analysis data and samples as schema version 1 |
-| `--bank N` | Show only that function bank in terminal output; validate its presence in each function capture |
-| `--sort cycles` | Rank functions and scale bars by cycles per call |
-| `--sort wall` | Rank functions and scale bars by wall microseconds per call |
+| `--bank N` | Show that numeric bank in function/region terminal output; validate its presence |
+| `--sort cycles` | Rank functions/regions by cycles per call; region reports fall back to wall time if cycles are absent |
+| `--sort wall` | Rank functions/regions by wall microseconds per call |
 
 `--bank` and nondefault `--sort` are terminal presentation options and are
 rejected with `--json`. Stress summaries are not bank-filtered by `--bank`.

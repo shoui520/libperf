@@ -20,6 +20,7 @@ runs to the application's task.
 | Instrument functions and interpret costs | [Measurement](agents/measurement.md) |
 | Understand the bundled workloads and their results | [Examples and validation](agents/examples-and-validation.md) |
 | Read captures or consume analyzer JSON | [Capture formats](agents/capture-formats.md) |
+| Write portable region CSVs or map existing layouts | [General CSV format](csv-format.md) |
 
 ## Facts to retain across tasks
 
@@ -48,3 +49,7 @@ runs to the application's task.
    different measurement boundaries and include overhead and contention.
 10. Analyzer envelope status and recorded stress status serve different
     purposes. Successful parsing of a failed test is not a test pass.
+11. General region CSVs contain interval totals, not example-specific medians.
+    Counter means use PMU-covered calls; wall means use all measured calls.
+    Cumulative snapshots require explicit conversion; unknown event selectors
+    must remain unknown.
